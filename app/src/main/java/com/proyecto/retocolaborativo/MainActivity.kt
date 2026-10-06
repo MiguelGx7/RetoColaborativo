@@ -8,6 +8,8 @@ import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
+    private var token: String? = null   // aquí guardaremos la "manilla"
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -24,11 +26,9 @@ class MainActivity : AppCompatActivity() {
                     LoginRequest(usuario, clave)
                 )
                 if (resp.isSuccessful) {
-                    val accessToken = resp.body()?.accessToken
-                    Log.d("API", "Login exitoso: ${resp.body()?.username}")
-                    if (accessToken != null) {
-                        obtenerUsuario(accessToken)   // seguimos al GET
-                    }
+                    token = resp.body()?.accessToken   // ← guardamos el token
+                    Log.d("API", "Token recibido: $token")
+                    obtenerUsuario()                   // seguimos al GET
                 } else {
                     Log.e("API", "Login falló: ${resp.code()}")
                 }
@@ -39,10 +39,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     // ---------- PASO B: GET protegido con el token ----------
-    private fun obtenerUsuario(token: String) {
+    private fun obtenerUsuario() {
+        val t = token ?: return   // si no hay token, no seguimos
         lifecycleScope.launch {
             try {
-                val resp = RetrofitClient.api.getCurrentUser(token)
+                val resp = RetrofitClient.api.getCurrentUser(t)
                 if (resp.isSuccessful) {
                     val user = resp.body()
                     Log.d("API", "Hola ${user?.firstName} - ${user?.email}")
